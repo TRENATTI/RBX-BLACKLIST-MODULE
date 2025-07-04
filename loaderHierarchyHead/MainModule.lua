@@ -60,7 +60,7 @@ for user,data in pairs(users) do
 						return PlayerService:BanAsync(config)
 					end)
 					if success2 then
-						warn(script.Name .. ' ~ Permanently Banned ' .. data.latestUsername ..`[`..userId..`]`)
+						warn(script.Name .. ' ~ Permanently Banned ' .. data.latestUsername ..` [`..userId..`]`)
 						yippee = true
 					end
 				else
