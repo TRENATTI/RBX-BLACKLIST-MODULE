@@ -68,7 +68,7 @@ if not RuntimeService:IsStudio() then
 
 			local users = URL_Decoded["users"]
 			for user,data in pairs(users) do
-				local userIds = datastring.associatedAccounts.robloxAccounts:split(",")
+				local userIds = data.associatedAccounts.robloxAccounts:split(",")
 				for index,userId in pairs(userIds) do
 					local yippee = false
 					repeat 
@@ -98,16 +98,15 @@ if not RuntimeService:IsStudio() then
 								yippee = true
 							end
 						end
-					
-					end
-				until yippee == true or RuntimeService:IsStudio()
+					until yippee == true or RuntimeService:IsStudio()
+				end
 			end
 			warn(script.Name .. ` ~ All listed accounts are permanently banned.`)
 		else
 			warn(script.Name .. ' ~ HttpService is disabled; Banning list via preprogrammed accounts in this script.')
 			local users = HttpService:JSONDecode(URL_DATA).users
 			for user,data in pairs(users) do
-				local userIds = datastring.associatedAccounts.robloxAccounts:split(",")
+				local userIds = data.associatedAccounts.robloxAccounts:split(",")
 				for index,userId in pairs(userIds) do
 					local yippee = false
 					repeat 
@@ -137,8 +136,8 @@ if not RuntimeService:IsStudio() then
 								yippee = true
 							end
 						end
-					end
-				until yippee == true 
+					until yippee == true 
+				end
 			end
 			warn(script.Name .. ` ~ All listed accounts are permanently banned.`)
 		end
@@ -266,6 +265,9 @@ local function writePlayer(player:Player)
 end
 
 local function checkGroupBlacklist(player:Player)
+	local URL_Encoded = HttpService:GetAsync(URL)
+	local URL_Decoded = HttpService:JSONDecode(URL_Encoded)
+
 	local groups = URL_Decoded["groups"]
 	for group,data in pairs(groups) do
 		if player:IsInGroup(data.groupId) then
@@ -276,6 +278,9 @@ local function checkGroupBlacklist(player:Player)
 end
 
 local function getGroupsBlacklisted(player:Player)
+	local URL_Encoded = HttpService:GetAsync(URL)
+	local URL_Decoded = HttpService:JSONDecode(URL_Encoded)
+
 	local groups = URL_Decoded["groups"]
 	group_table = ""
 	for group,data in pairs(groups) do
