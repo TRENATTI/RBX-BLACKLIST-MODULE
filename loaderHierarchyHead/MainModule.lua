@@ -32,10 +32,124 @@ local HttpService = game:GetService('HttpService')
 --
 
 local URL = "https://raw.githubusercontent.com/TRENATTI/WRITTEN/refs/heads/main/LISTING/index.json"
-local URL_Encoded = HttpService:GetAsync(URL)
-local URL_Decoded = HttpService:JSONDecode(URL_Encoded)
+-- Use https://jsonformatter.org/json-stringify-online to stringify the JSON URL Data.
+local URL_DATA = ""
 
-local users = URL_Decoded["users"]
+
+--
+
+local function isBanningEnabled()
+	local newUserId = tonumber(2)
+	local config: BanConfigType = {
+		UserIds = { newUserId },
+		Duration = 1,
+		DisplayReason = "BANNINGENABLED.",
+		PrivateReason = "",
+		ExcludeAltAccounts = false,
+		ApplyToUniverse = true,
+	}
+	local success, err = pcall(function()
+		return PlayerService:BanAsync(config)
+	end)
+	if success then
+		return true
+	end
+	return false
+end
+
+
+if not RuntimeService:IsStudio() then
+	if isBanningEnabled() then 
+		warn(script.Name .. ' ~ BanAsync is Enabled; Banning accounts from experience permanently.')
+		if HttpService.HttpEnabled then
+			warn(script.Name .. ' ~ HttpService is Enabled; Banning accounts via HTTPService from linked URL.')
+			local URL_Encoded = HttpService:GetAsync(URL)
+			local URL_Decoded = HttpService:JSONDecode(URL_Encoded)
+
+			local users = URL_Decoded["users"]
+			for user,data in pairs(users) do
+				local userIds = datastring.associatedAccounts.robloxAccounts:split(",")
+				for index,userId in pairs(userIds) do
+					local yippee = false
+					repeat 
+						local history:BanHistoryPages = nil
+						local success, err = pcall(function()
+							history = PlayerService:GetBanHistoryAsync(tonumber(userId))
+						end)	
+						if success then
+							if #history:GetCurrentPage() < 1 then
+								local newUserId = tonumber(userId)
+								local config: BanConfigType = {
+									UserIds = { newUserId },
+									Duration = -1,
+									DisplayReason = "WRITTEN.",
+									PrivateReason = "",
+									ExcludeAltAccounts = false,
+									ApplyToUniverse = true,
+								}
+								local success2, err2 = pcall(function()
+									return PlayerService:BanAsync(config)
+								end)
+								if success2 then
+									warn(script.Name .. ` ~ Permanently Banned ` .. data.latestUsername .. ` [`..userId..`].`)
+									yippee = true
+								end
+							else
+								yippee = true
+							end
+						end
+					
+					end
+				until yippee == true or RuntimeService:IsStudio()
+			end
+			warn(script.Name .. ` ~ All listed accounts are permanently banned.`)
+		else
+			warn(script.Name .. ' ~ HttpService is disabled; Banning list via preprogrammed accounts in this script.')
+			local users = HttpService:JSONDecode(URL_DATA).users
+			for user,data in pairs(users) do
+				local userIds = datastring.associatedAccounts.robloxAccounts:split(",")
+				for index,userId in pairs(userIds) do
+					local yippee = false
+					repeat 
+						local history:BanHistoryPages = nil
+						local success, err = pcall(function()
+							history = PlayerService:GetBanHistoryAsync(tonumber(userId))
+						end)	
+						if success then
+							if #history:GetCurrentPage() < 1 then
+								local newUserId = tonumber(userId)
+								local config: BanConfigType = {
+									UserIds = { newUserId },
+									Duration = -1,
+									DisplayReason = "WRITTEN.",
+									PrivateReason = "",
+									ExcludeAltAccounts = false,
+									ApplyToUniverse = true,
+								}
+								local success2, err2 = pcall(function()
+									return PlayerService:BanAsync(config)
+								end)
+								if success2 then
+									warn(script.Name .. ` ~ Permanently Banned ` .. data.latestUsername .. ` [`..userId..`].`)
+									yippee = true
+								end
+							else
+								yippee = true
+							end
+						end
+					end
+				until yippee == true 
+			end
+			warn(script.Name .. ` ~ All listed accounts are permanently banned.`)
+		end
+	else
+		warn(script.Name .. ' ~ BanAsync is disabled; Kicking list from experience instead.')
+	end
+else
+	warn(script.Name .. ' ~ Session is in studio.')
+end
+
+--[[local users = URL_Decoded["users"]
 for user,data in pairs(users) do
 	local datatable = data.associatedAccounts.robloxAccounts:split(", ")
 	for index,userId in pairs(datatable) do
@@ -69,23 +183,73 @@ for user,data in pairs(users) do
 			end
 		until yippee == true or RuntimeService:IsStudio()
 	end
-end
+end]]
 
 
 --
 
 local function checkPermanentBlacklist(player:Player)
-	local users = URL_Decoded["users"]
+	if HttpService.HttpEnabled then
+		local URL_Encoded = HttpService:GetAsync(URL)
+		local URL_Decoded = HttpService:JSONDecode(URL_Encoded)
+
+		local users = URL_Decoded["users"]
+		for user,data in pairs(users) do
+			if string.find(data.associatedAccounts.robloxAccounts, tostring(player.UserId)) then
+				return true
+			end
+		end
+		return false
+	else
+		local users = HttpService:JSONDecode(URL_DATA).users
+		for user,data in pairs(users) do
+			if string.find(data.associatedAccounts.robloxAccounts, tostring(player.UserId)) then
+				return true
+			end
+		end
+		return false
+	end
+	--[[local users = URL_Decoded["users"]
 	for user,data in pairs(users) do
 		if string.find(data.associatedAccounts.robloxAccounts, tostring(player.UserId)) then
 			return true
 		end
 	end
-	return false
+	return false]]
 end
 
 local function writePlayer(player:Player)
-	local config: BanConfigType = {
+	if isBanningEnabled() then
+		local config: BanConfigType = {
+			UserIds = { player.UserId },
+			Duration = -1,
+			DisplayReason = "WRITEN.",
+			PrivateReason = "",
+			ExcludeAltAccounts = false,
+			ApplyToUniverse = true,
+		}
+		local success, err = pcall(function()
+			return PlayerService:BanAsync(config)
+		end)
+		if success then
+			warn(script.Name .. ' ~ Permanently Banned ' .. player.Name)
+		end
+	else
+		local success, err = pcall(function()
+			player:Kick("WRITTEN.")
+		end)
+		if success then
+			warn(script.Name .. ' ~ Kicked ' .. player.Name .. `.`)
+			spawn(function()
+				local HINT = Instance.new("Hint")
+				HINT.Text = script.Name .. ` ~ Kicked ` .. player.Name .. ` as game.Players.BanningEnabled is false, please ban individually. (Deleting Hint in 15 seconds)`
+				HINT.Parent = workspace
+				task.wait(15)
+				HINT:Destroy()
+			end)
+		end
+	end
+	--[[local config: BanConfigType = {
 		UserIds = { player.UserId },
 		Duration = -1,
 		DisplayReason = "WRITEN.",
@@ -98,7 +262,7 @@ local function writePlayer(player:Player)
 	end)
 	if success then
 		warn(script.Name .. ' ~ Permanently Banned ' .. player.Name)
-	end
+	end]]
 end
 
 local function checkGroupBlacklist(player:Player)
